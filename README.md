@@ -32,7 +32,7 @@ BlockSphere is an academic prototype that demonstrates how an event-ticket booki
 ![BlockSphere homepage](ss/homepage.png)
 
 ### Ticket Booking Preview
-![Ticket booking-preview](ss/booking-preview.png)
+![Ticket booking preview](ss/booking-preview.png)
 
 ### Booking Confirmation
 ![Booking confirmation](ss/transaction-result.png)
