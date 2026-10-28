@@ -26,6 +26,18 @@ BlockSphere is an academic prototype that demonstrates how an event-ticket booki
 
 ## Architecture
 
+## Application Screenshots
+
+### Homepage
+![BlockSphere homepage](screenshots/homepage.png)
+
+### Ticket Booking Preview
+![Ticket booking preview](screenshots/booking-preview.png)
+
+### Booking Confirmation
+![Booking confirmation](screenshots/transaction-result.png)
+
+
 ```text
 User
   |
