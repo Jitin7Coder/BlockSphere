@@ -1,42 +1,53 @@
-# BlockSphere — Blockchain-Based Event Ticket Booking
+# BlockSphere
 
-BlockSphere is an academic prototype that demonstrates how an event-ticket booking interface can interact with an Ethereum-compatible smart contract through MetaMask and verify a booking transaction on a local blockchain.
+A blockchain-based event ticket booking prototype built with React and Solidity. It connects a browser wallet to an Ethereum-compatible smart contract and demonstrates event creation, ticket booking, cancellation, refunds, and organizer withdrawals on a local Hardhat network.
 
-> **Project status:** Local development prototype. The documented booking test was performed on Hardhat Local; this repository does not represent a public blockchain deployment.
+> **Project status:** Academic/local-development prototype. The documented transaction flow and tests use a local Hardhat chain. This repository is not deployed to Ethereum mainnet or a public testnet, and it is not a production ticketing service.
+
+## Overview
+
+BlockSphere explores how a web application can use a smart contract to manage ticket inventory and payments. Users can browse sample events, select tickets, connect MetaMask, and interact with the booking contract.
 
 ## Features
 
-- Browse sample events through a React interface.
+### Frontend
+- Browse sample events in a React interface.
 - Search and filter event listings.
-- Select an event and ticket quantity, then review a booking preview.
-- Connect a wallet using MetaMask.
-- Submit a booking transaction to the `EventTicketBooking.sol` smart contract.
-- Wait for the transaction receipt and check its status before showing confirmation.
+- Select an event and ticket quantity.
+- Connect a browser wallet through MetaMask.
+- Submit a booking transaction and check its receipt before displaying confirmation.
 
-## Tech Stack
+### Smart contract
+The `EventTicketBooking.sol` contract includes functions to:
+- Create an event with a future date, ticket price, and ticket supply.
+- Book one or multiple tickets with the exact payment required.
+- Cancel a ticket before the event and issue a refund.
+- Allow the event organizer to withdraw proceeds after the event.
+- Track event and ticket data, including booking and cancellation status.
 
-| Technology | Purpose |
-|---|---|
-| React + Vite | Frontend interface and development/build workflow |
-| JavaScript, HTML, CSS | UI behaviour and styling |
-| Solidity | Smart-contract logic |
-| Hardhat | Contract compilation, deployment tools, tests, and local development network |
-| MetaMask | Wallet connection and transaction approval |
-| ethers.js | Frontend communication with the contract and provider |
+## Screenshots
 
-## Architecture
-
-## Application Screenshots
-
-### Homepage
+### Event listing
 ![BlockSphere homepage](ss/homepage.png)
 
-### Ticket Booking Preview
+### Booking preview
 ![Ticket booking preview](ss/booking-preview.png)
 
-### Booking Confirmation
-![Booking confirmation](ss/transaction-result.png)
+### Transaction result
+![Booking transaction result](ss/transaction-result.png)
 
+## Technology stack
+
+| Technology | Role |
+|---|---|
+| React 19 + Vite | Frontend application and development server |
+| JavaScript, HTML, CSS | Application logic and interface |
+| Solidity | Ticket booking smart contract |
+| Hardhat 2 + Hardhat Toolbox | Local blockchain development, compilation, and tests |
+| ethers.js 6 | Contract and wallet interaction |
+| MetaMask | Browser wallet connection and transaction approval |
+
+## Architecture
 
 ```text
 User
@@ -45,43 +56,47 @@ User
 React + Vite frontend
   |
   v
-MetaMask wallet approval
+MetaMask wallet
   |
   v
-Hardhat Local network
+ethers.js
+  |
+  v
+Hardhat local network
   |
   v
 EventTicketBooking.sol
   |
   v
-Transaction receipt checked by frontend
+Transaction receipt and UI confirmation
 ```
 
-## Repository Structure
+## Repository structure
 
 ```text
 BlockSphere/
-├── frontend/              # React + Vite application
+├── frontend/
 │   ├── src/
 │   │   ├── App.jsx
 │   │   ├── App.css
 │   │   └── contract.js
-│   ├── package.json
-│   └── ...
-├── blockchain/            # Hardhat project
+│   └── package.json
+├── blockchain/
 │   ├── contracts/
 │   │   └── EventTicketBooking.sol
-│   ├── scripts/
 │   ├── test/
+│   │   └── EventTicketBooking.js
+│   ├── ignition/
+│   │   └── modules/
 │   ├── hardhat.config.js
 │   └── package.json
+├── ss/
 └── README.md
 ```
 
-## Run Locally
+## Run locally
 
 ### Prerequisites
-
 - Node.js and npm
 - Git
 - MetaMask browser extension
@@ -93,37 +108,43 @@ git clone https://github.com/Jitin7Coder/BlockSphere.git
 cd BlockSphere
 ```
 
-### 2. Install blockchain dependencies
+### 2. Install blockchain dependencies and compile
 
 ```bash
 cd blockchain
 npm install
+npx hardhat compile
 ```
 
-### 3. Start the local Hardhat node
+Compilation generates the contract artifact imported by the frontend.
 
-Open a terminal in the `blockchain` directory and run:
+### 3. Run the smart contract tests
+
+From the `blockchain` directory:
+
+```bash
+npx hardhat test
+```
+
+The `EventTicketBooking` test suite covers event creation, successful booking, incorrect payment, sold-out inventory, cancellation and refunds, ticket ownership, and organizer withdrawals.
+
+### 4. Start a local Hardhat node
+
+From the `blockchain` directory, open a terminal and run:
 
 ```bash
 npx hardhat node
 ```
 
-Keep this terminal running. The local node normally uses `http://127.0.0.1:8545` and chain ID `31337`.
+Keep the node running. Hardhat's local network uses `http://127.0.0.1:8545` and chain ID `31337` by default.
 
-### 4. Compile and deploy the contract
+### 5. Configure and start the frontend
 
-Open a **second terminal** in the `blockchain` directory:
+The frontend reads the contract ABI from the compiled artifact and the address from `frontend/src/contract.js`.
 
-```bash
-npx hardhat compile
-npx hardhat run scripts/deploy.js --network localhost
-```
+Before using the UI, deploy `EventTicketBooking.sol` to your local Hardhat node and set `CONTRACT_ADDRESS` in that file to the deployed contract address. The repository currently does not include a dedicated deployment script or Ignition module for `EventTicketBooking`; the existing Ignition module is for the sample `Lock` contract.
 
-Use the deployed contract address in the frontend configuration. The frontend contract address, ABI, wallet network, and RPC endpoint must match the local deployment.
-
-### 5. Install and start the frontend
-
-Open a **third terminal**:
+In another terminal:
 
 ```bash
 cd frontend
@@ -131,40 +152,45 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite in your browser. Connect MetaMask to the local Hardhat network and use a local development account for testing only.
+Open the local URL printed by Vite. Connect MetaMask to the local Hardhat network (chain ID `31337`) and use a local development account.
 
-> **Important:** Hardhat's local accounts and private keys are for local development only. Never use them for real funds, and never commit private keys, seed phrases, or `.env` secrets to GitHub.
+> **Security note:** Hardhat accounts and private keys are for local development only. Never use them with real funds or commit private keys, seed phrases, or secret environment files to GitHub.
 
-## Test Evidence
+## Test evidence
 
-A booking test was recorded with the following details:
+A local booking transaction was recorded with these details:
 
-- **Event:** Champions Football Night
-- **Quantity:** 1 ticket
-- **Transaction value:** 0.003 ETH
-- **Network:** Hardhat Local
-- **Chain ID:** `31337`
-- **Receipt status:** `1` (successful execution)
-- **Block:** `12`
+| Item | Recorded value |
+|---|---|
+| Event | Champions Football Night |
+| Quantity | 1 ticket |
+| Transaction value | 0.003 ETH |
+| Network | Hardhat Local |
+| Chain ID | `31337` |
+| Receipt status | `1` (successful) |
+| Block | `12` |
 
-This confirms the observed transaction on the local development chain only. It does not indicate deployment to Ethereum mainnet or a public testnet.
+This is evidence from a local development chain only; it is not a public-chain transaction.
 
-## Current Scope and Limitations
+## Scope and limitations
 
-This prototype demonstrates event discovery and the wallet-to-contract booking transaction flow. It is not a production ticketing platform. Complete NFT ticket issuance, public testnet deployment, public hosting, venue-entry validation, and comprehensive end-to-end testing are not claimed as completed features.
+- Local development prototype; no public deployment is claimed.
+- No production hosting or venue-entry validation.
+- The repository does not yet include a dedicated deployment module for `EventTicketBooking`.
+- The current implementation should not be treated as a production ticketing or payment platform.
 
-## Future Improvements
+## Planned improvements
 
-- Deploy and verify the contract on a public testnet.
-- Host the frontend so it can be accessed remotely.
-- Add a complete NFT ticket issuance and ownership workflow.
-- Expand tests for invalid bookings, payment errors, rejected wallet requests, and other failure cases.
+- Add a dedicated, reproducible deployment workflow for `EventTicketBooking`.
+- Add a public testnet deployment and contract verification.
+- Host the frontend for remote demonstrations.
+- Expand automated frontend and end-to-end tests.
 - Improve mobile usability and ticket lifecycle handling.
 
 ## Author
 
-**Jitin7Coder** — [GitHub Profile](https://github.com/Jitin7Coder)
+**Jitin Jadwani** — [GitHub profile](https://github.com/Jitin7Coder)
 
 ---
 
-If you find this project useful, feel free to explore the code and open an issue with feedback.
+If you explore the project, feedback and issue reports are welcome.
