@@ -1,6 +1,7 @@
 import { CONTRACT_ABI, CONTRACT_ADDRESS } from './contract'
 import { useState, useEffect, useCallback } from 'react'
 import { ethers } from 'ethers'
+import { Analytics } from '@vercel/analytics/react'
 import './App.css'
 
 const events = [
@@ -1099,6 +1100,7 @@ console.log('Cancellation confirmed:', transaction.hash)
           </div>
         </div>
       )}
+      <Analytics />
     </div>
   )
 }
