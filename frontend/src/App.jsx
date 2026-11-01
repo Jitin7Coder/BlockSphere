@@ -221,11 +221,11 @@ function App() {
       const provider = new ethers.BrowserProvider(window.ethereum)
       const network = await provider.getNetwork()
 
-      if (network.chainId !== 31337n) {
+      if (network.chainId !== 11155111n) {
         setContract(null)
         setWalletAddress('')
         setWalletError(
-          'Please select the Hardhat Local network (Chain ID 31337) in MetaMask.'
+          'Please select the Sepolia network (Chain ID 11155111) in MetaMask.'
         )
         return
       }
