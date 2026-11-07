@@ -280,7 +280,7 @@ function App() {
       setContract(null)
       setMyTickets([])
       setWalletError(
-        'Network changed. Please connect your wallet again on Hardhat Local.'
+        'Network changed. Please connect your wallet again on Sepolia.'
       )
     }
 
@@ -387,7 +387,7 @@ function App() {
 
     if (!walletAddress || !contract) {
       setBookingMessage(
-        'Connect MetaMask to Hardhat Local before booking.'
+        'Connect MetaMask to Sepolia before booking.'
       )
       return
     }
