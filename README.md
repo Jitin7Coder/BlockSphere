@@ -1,29 +1,31 @@
 # BlockSphere
 
-A blockchain-based event ticket booking prototype built with React and Solidity. It connects a browser wallet to an Ethereum-compatible smart contract and demonstrates event creation, ticket booking, cancellation, refunds, and organizer withdrawals on a local Hardhat network.
+A blockchain-based event ticket booking prototype built with React and Solidity. The frontend is hosted on Vercel and connects MetaMask to an Ethereum Sepolia smart contract for event discovery, ticket booking, cancellation, refunds, and organizer withdrawals.
 
-> **Project status:** Academic/local-development prototype. The documented transaction flow and tests use a local Hardhat chain. This repository is not deployed to Ethereum mainnet or a public testnet, and it is not a production ticketing service.
+> **Project status:** Academic prototype in active development. The frontend is configured for Sepolia (chain ID `11155111`). This is a testnet demonstration, not a production ticketing or payment service. Sepolia uses test ETH, which has no intended real-world value.
 
 ## Overview
 
-BlockSphere explores how a web application can use a smart contract to manage ticket inventory and payments. Users can browse sample events, select tickets, connect MetaMask, and interact with the booking contract.
+BlockSphere explores how a web application can use a smart contract to manage ticket inventory and payments. Users can browse sample events, select ticket quantities, connect MetaMask, and submit transactions to the booking contract.
 
 ## Features
 
 ### Frontend
-- Browse sample events in a React interface.
-- Search and filter event listings.
+- Browse, search, and filter sample event listings.
 - Select an event and ticket quantity.
-- Connect a browser wallet through MetaMask.
-- Submit a booking transaction and check its receipt before displaying confirmation.
+- Connect MetaMask and check that the wallet is on Sepolia.
+- Check that contract bytecode exists at the configured address before enabling contract interaction.
+- Submit booking transactions and wait for a successful transaction receipt before showing confirmation.
+- View tickets associated with the connected wallet and request cancellation.
 
 ### Smart contract
-The `EventTicketBooking.sol` contract includes functions to:
-- Create an event with a future date, ticket price, and ticket supply.
-- Book one or multiple tickets with the exact payment required.
-- Cancel a ticket before the event and issue a refund.
-- Allow the event organizer to withdraw proceeds after the event.
-- Track event and ticket data, including booking and cancellation status.
+The `EventTicketBooking.sol` contract includes:
+- Event creation with a future date, ticket price, and ticket supply.
+- Single-ticket and multi-ticket booking.
+- Exact-payment validation and inventory checks.
+- Ticket cancellation and refunds before the event.
+- Organizer withdrawals after the event.
+- On-chain event and ticket state tracking.
 
 ## Screenshots
 
@@ -43,9 +45,10 @@ The `EventTicketBooking.sol` contract includes functions to:
 | React 19 + Vite | Frontend application and development server |
 | JavaScript, HTML, CSS | Application logic and interface |
 | Solidity | Ticket booking smart contract |
-| Hardhat 2 + Hardhat Toolbox | Local blockchain development, compilation, and tests |
+| Hardhat 2 + Hardhat Toolbox | Contract compilation, deployment, and tests |
 | ethers.js 6 | Contract and wallet interaction |
 | MetaMask | Browser wallet connection and transaction approval |
+| Vercel | Frontend hosting |
 
 ## Architecture
 
@@ -53,19 +56,16 @@ The `EventTicketBooking.sol` contract includes functions to:
 User
   |
   v
-React + Vite frontend
+React + Vite frontend (Vercel)
   |
   v
-MetaMask wallet
+MetaMask wallet (Sepolia)
   |
   v
 ethers.js
   |
   v
-Hardhat local network
-  |
-  v
-EventTicketBooking.sol
+EventTicketBooking.sol (Sepolia)
   |
   v
 Transaction receipt and UI confirmation
@@ -84,14 +84,12 @@ BlockSphere/
 ├── blockchain/
 │   ├── contracts/
 │   │   └── EventTicketBooking.sol
+│   ├── scripts/
+│   │   └── deploy.js
 │   ├── test/
 │   │   └── EventTicketBooking.js
-│   ├── ignition/
-│   │   └── modules/
-│   ├── hardhat.config.js
-│   └── package.json
-├── ss/
-└── README.md
+│   └── hardhat.config.js
+└── ss/
 ```
 
 ## Run locally
@@ -100,6 +98,7 @@ BlockSphere/
 - Node.js and npm
 - Git
 - MetaMask browser extension
+- Sepolia test ETH for testnet transactions
 
 ### 1. Clone the repository
 
@@ -108,15 +107,13 @@ git clone https://github.com/Jitin7Coder/BlockSphere.git
 cd BlockSphere
 ```
 
-### 2. Install blockchain dependencies and compile
+### 2. Install dependencies and compile the contract
 
 ```bash
 cd blockchain
 npm install
 npx hardhat compile
 ```
-
-Compilation generates the contract artifact imported by the frontend.
 
 ### 3. Run the smart contract tests
 
@@ -126,25 +123,41 @@ From the `blockchain` directory:
 npx hardhat test
 ```
 
-The `EventTicketBooking` test suite covers event creation, successful booking, incorrect payment, sold-out inventory, cancellation and refunds, ticket ownership, and organizer withdrawals.
+The test suite covers event creation, single-ticket booking, multi-ticket booking, incorrect payments, insufficient inventory, cancellation and refunds, ticket ownership, and organizer withdrawals. Tests run against Hardhat's local in-memory network; they do not send transactions to Sepolia.
 
-### 4. Start a local Hardhat node
+### 4. Configure Sepolia deployment credentials
 
-From the `blockchain` directory, open a terminal and run:
+Create a `.env` file inside `blockchain/` (it must remain untracked) with:
 
-```bash
-npx hardhat node
+```env
+SEPOLIA_RPC_URL=your_sepolia_rpc_url
+PRIVATE_KEY=your_deployment_wallet_private_key
 ```
 
-Keep the node running. Hardhat's local network uses `http://127.0.0.1:8545` and chain ID `31337` by default.
+Use a dedicated wallet containing only Sepolia test ETH. Never commit this file, a private key, or a seed phrase. The Hardhat configuration reads these two environment variables for the Sepolia network.
 
-### 5. Configure and start the frontend
+### 5. Deploy the contract and create sample events
 
-The frontend reads the contract ABI from the compiled artifact and the address from `frontend/src/contract.js`.
+From the `blockchain` directory:
 
-Before using the UI, deploy `EventTicketBooking.sol` to your local Hardhat node and set `CONTRACT_ADDRESS` in that file to the deployed contract address. The repository currently does not include a dedicated deployment script or Ignition module for `EventTicketBooking`; the existing Ignition module is for the sample `Lock` contract.
+```bash
+npx hardhat run scripts/deploy.js --network sepolia
+```
 
-In another terminal:
+The script deploys `EventTicketBooking.sol`, creates the sample events, and prints the deployed contract address. Deployment requires a working Sepolia RPC endpoint and sufficient Sepolia test ETH.
+
+After deployment:
+1. Copy the printed contract address.
+2. Update `CONTRACT_ADDRESS` in `frontend/src/contract.js` to that address.
+3. Ensure `frontend/src/contractABI.json` matches the ABI generated from the deployed contract artifact.
+4. Commit only the public contract address and ABI; do not commit secrets.
+5. Deploy the updated frontend to Vercel.
+
+**Important:** The frontend address currently configured in the repository is `0xce27CCa4605834b1C939A64BFC3229483761cc86`. Confirm that this address contains the expected contract on Sepolia before relying on it. A configured address alone is not proof of a successful deployment.
+
+### 6. Start the frontend
+
+In a separate terminal:
 
 ```bash
 cd frontend
@@ -152,40 +165,29 @@ npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. Connect MetaMask to the local Hardhat network (chain ID `31337`) and use a local development account.
+Open the local URL printed by Vite. Connect MetaMask to Sepolia (chain ID `11155111`). The frontend checks the selected chain and verifies that contract bytecode exists at the configured address.
 
-> **Security note:** Hardhat accounts and private keys are for local development only. Never use them with real funds or commit private keys, seed phrases, or secret environment files to GitHub.
+## Test and deployment evidence
 
-## Test evidence
+Automated contract tests use Hardhat's local in-memory network. The repository also contains a deployment script intended for Sepolia. The configured frontend address and network check indicate Sepolia integration, but deployment status and transaction history should be confirmed independently using a Sepolia block explorer.
 
-A local booking transaction was recorded with these details:
-
-| Item | Recorded value |
-|---|---|
-| Event | Champions Football Night |
-| Quantity | 1 ticket |
-| Transaction value | 0.003 ETH |
-| Network | Hardhat Local |
-| Chain ID | `31337` |
-| Receipt status | `1` (successful) |
-| Block | `12` |
-
-This is evidence from a local development chain only; it is not a public-chain transaction.
+Do not interpret local Hardhat test results as proof of a public testnet deployment.
 
 ## Scope and limitations
 
-- Local development prototype; no public deployment is claimed.
-- No production hosting or venue-entry validation.
-- The repository does not yet include a dedicated deployment module for `EventTicketBooking`.
-- The current implementation should not be treated as a production ticketing or payment platform.
+- Academic prototype in active development; not a production ticketing platform.
+- Sepolia is a public test network; transactions require test ETH and are not real payments.
+- Event listings are sample frontend data and must correspond to events created on-chain.
+- The frontend currently uses a configured contract address rather than dynamically discovering deployments.
+- Mobile usability, broader end-to-end coverage, and production-grade security review remain areas for improvement.
 
 ## Planned improvements
 
-- Add a dedicated, reproducible deployment workflow for `EventTicketBooking`.
-- Add a public testnet deployment and contract verification.
-- Host the frontend for remote demonstrations.
-- Expand automated frontend and end-to-end tests.
+- Add automated frontend and end-to-end tests.
+- Add contract verification and a reproducible deployment record.
+- Improve event data synchronization between the frontend and contract.
 - Improve mobile usability and ticket lifecycle handling.
+- Conduct a security review before considering any production deployment.
 
 ## Author
 
