@@ -236,7 +236,7 @@ function App() {
         setContract(null)
         setWalletAddress('')
         setWalletError(
-          'No contract found at this address. Check that Hardhat is running and the contract address is correct.'
+          'No contract found at this address on Sepolia. Verify the configured contract address and network deployment.'
         )
         return
       }
