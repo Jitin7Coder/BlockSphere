@@ -50,6 +50,54 @@ const Factory = await ethers.getContractFactory(
     expect(event.proceeds).to.equal(price);
   });
 
+  it("books multiple tickets in one transaction and assigns distinct ticket IDs", async function () {
+    const { contract, buyer, price } = await setup();
+
+    await contract.connect(buyer).bookTickets(1, 2, { value: price * 2n });
+
+    const firstTicket = await contract.tickets(1);
+    const secondTicket = await contract.tickets(2);
+    const event = await contract.events(1);
+
+    expect(firstTicket.buyer).to.equal(buyer.address);
+    expect(secondTicket.buyer).to.equal(buyer.address);
+    expect(firstTicket.eventId).to.equal(1n);
+    expect(secondTicket.eventId).to.equal(1n);
+    expect(await contract.ticketCount()).to.equal(2n);
+    expect(event.ticketsSold).to.equal(2n);
+    expect(event.proceeds).to.equal(price * 2n);
+  });
+
+  it("rejects multi-ticket booking with incorrect total payment", async function () {
+    const { contract, buyer, price } = await setup();
+
+    await expect(
+      contract.connect(buyer).bookTickets(1, 2, { value: price })
+    ).to.be.revertedWith("Incorrect payment");
+
+    expect(await contract.ticketCount()).to.equal(0n);
+    expect((await contract.events(1)).ticketsSold).to.equal(0n);
+  });
+
+  it("rejects multi-ticket booking when inventory is insufficient", async function () {
+    const { contract, buyer, price } = await setup();
+
+    await expect(
+      contract.connect(buyer).bookTickets(1, 3, { value: price * 3n })
+    ).to.be.revertedWith("Not enough tickets remaining");
+
+    expect(await contract.ticketCount()).to.equal(0n);
+    expect((await contract.events(1)).ticketsSold).to.equal(0n);
+  });
+
+  it("rejects a zero quantity in multi-ticket booking", async function () {
+    const { contract, buyer } = await setup();
+
+    await expect(
+      contract.connect(buyer).bookTickets(1, 0, { value: 0 })
+    ).to.be.revertedWith("Quantity must be positive");
+  });
+
   it("rejects an incorrect payment", async function () {
     const { contract, buyer } = await setup();
 
